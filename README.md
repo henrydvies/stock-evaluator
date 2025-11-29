@@ -1,0 +1,2 @@
+# stock-evaluator
+A service that has a main endpoint where you pass in a stock symbol. Then using  a variety of metrics evaluates it and returns a structure with different metrics and assigned values for each metric
