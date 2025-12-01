@@ -12,7 +12,10 @@ async def evaluate_all(ticker: str) -> Dict[str, Any]:
     """Evaluate all metrics for a given ticker.
 
     Args:
-        ticker (str): Stock ticker symbol."""
+        ticker (str): Stock ticker symbol.
+    Returns:
+        Dict[str, Any]: Dictionary of metric names and their computed values.
+    """
     
     results: Dict[str, Any] = {}
     
