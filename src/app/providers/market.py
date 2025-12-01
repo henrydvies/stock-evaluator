@@ -8,7 +8,7 @@ async def get_current_price(ticker: str) -> float:
     """
     # Placeholder implementation
     STOCK_PRICES = {
-        "AAPL": 150.25, 
+        "AAPL": 199.40, 
         "GOOGL": 2750.50,
         "MSFT": 299.00
     }  
