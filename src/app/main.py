@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes_eval import router as eval_router
+from app.api.routes import tickers
 from app.core.config import settings
 
 def create_app() -> FastAPI:
@@ -13,7 +13,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,)
     
-    app.include_router(eval_router, prefix="/api")
+    app.include_router(tickers.router)
     
     return app
 
