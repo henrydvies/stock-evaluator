@@ -42,7 +42,7 @@ async def validate_ticker(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "error": "Invalid ticker format.",
+                "error": "INVALID_TICKER_FORMAT",
                 "message": str(e),
                 "details": f"Got '{symbol}'."
             },
@@ -52,7 +52,7 @@ async def validate_ticker(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
-                "error": "Ticker not found.",
+                "error": "TICKER_NOT_FOUND",
                 "message": str(e),
                 "details": f"Symbol '{symbol}' does not exist."
             },
@@ -62,7 +62,7 @@ async def validate_ticker(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail={
-                "error": "Yahoo client error.",
+                "error": "YAHOO_CLIENT_ERROR",
                 "message": str(e),
                 "details": "Error occurred while communicating with Yahoo Finance."
             },
