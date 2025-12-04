@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import tickers
+from app.api.routes import tickers, price
 from app.core.config import settings
 
 def create_app() -> FastAPI:
@@ -14,6 +14,7 @@ def create_app() -> FastAPI:
         title=settings.app_name,)
     
     app.include_router(tickers.router)
+    app.include_router(price.router)
     
     return app
 

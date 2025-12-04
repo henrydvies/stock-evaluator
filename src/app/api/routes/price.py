@@ -1,43 +1,45 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.ticker_validation import TickerValidationService, TickerNotFoundError
-from app.providers.yahoo_client import YFinanceYahooClient, YahooClientError
+from app.core.price_service import PriceService, PriceDataError
+from app.providers.yahoo_client import YFinanceYahooClient, YahooClientError, YahooSymbolNotFoundError
 from app.utils.ticker import InvalidTickerError
-from app.schemas.ticker import TickerValidationResponse, ErrorResponse
+from app.schemas.price import PriceResponse
+from app.schemas.ticker import ErrorResponse # Existing error schema
 
-router = APIRouter(prefix="/tickers", tags=["Tickers"])
+router = APIRouter(prefix="/price", tags=["Price"])
 
-def get_ticker_validation_service() -> TickerValidationService:
+def get_price_service() -> PriceService:
     """
-    Provides an instance of TickerValidationService with a YahooClient.
+    Provides an instance of PriceService with a YahooClient.
+
     Returns:
-        TickerValidationService: An instance of TickerValidationService.
+        PriceService: An instance of PriceService.
     """
     client = YFinanceYahooClient()
-    return TickerValidationService(yahoo_client=client)
+    return PriceService(yahoo_client=client)
 
 @router.get(
-    "/{symbol}/validate", 
-    response_model=TickerValidationResponse, 
+    "/{symbol}",
+    response_model=PriceResponse,
     responses={
         422: {"model": ErrorResponse},
-        404: {"model": ErrorResponse}, 
+        404: {"model": ErrorResponse},
         502: {"model": ErrorResponse},
     },
 )
-async def validate_ticker(
+async def get_price(
     symbol: str,
-    service: TickerValidationService = Depends(get_ticker_validation_service),
+    service: PriceService = Depends(get_price_service),
 ):
-    """_summary_
+    """
+    Get price data for a given stock symbol.
 
     Args:
-        symbol (str): _description_
-        service (TickerValidationService, optional): _description_. Defaults to Depends(get_ticker_validation_service).
+        symbol (str): Stock ticker symbol.
+        service (PriceService, optional): PriceService instance. Defaults to Depends(get_price_service).
     """
     try:
-        normalised = await service.validate_ticker(symbol)
-        return TickerValidationResponse(symbol=normalised, valid=True)
+        return await service.get_price_for_symbol(symbol)
     except InvalidTickerError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -47,8 +49,7 @@ async def validate_ticker(
                 "details": f"Got '{symbol}'."
             },
         )
-    
-    except TickerNotFoundError as e:
+    except YahooSymbolNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
@@ -57,8 +58,7 @@ async def validate_ticker(
                 "details": f"Symbol '{symbol}' does not exist."
             },
         )
-    
-    except YahooClientError as e:
+    except (YahooClientError, PriceDataError) as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail={
@@ -67,7 +67,3 @@ async def validate_ticker(
                 "details": "Error occurred while communicating with Yahoo Finance."
             },
         )
-
-
-
-
