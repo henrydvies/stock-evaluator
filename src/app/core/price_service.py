@@ -58,13 +58,13 @@ class PriceService:
         
         current = float(latest)
         change_1d_pct = _pct_change(current, float(prev_close))
-        change_7d_pct = _pct_change(current, float(week_ago_close))
+        change_1w_pct = _pct_change(current, float(week_ago_close))
         
         return PriceResponse(
             symbol=symbol,
             current=current,
             change_1d_pct=change_1d_pct,
-            change_7d_pct=change_7d_pct,
+            change_1w_pct=change_1w_pct,
         )
         
         
