@@ -24,4 +24,3 @@ sentiment.news_score    -   Sentiment of news articles related
 
 ## Scores
 scores.overall  -   Attempt at a overall combination score
-
