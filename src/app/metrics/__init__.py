@@ -2,10 +2,13 @@ from typing import Dict, Any, List
 
 from .base import BaseMetric
 from .price import StockPriceMetric
+from .fundamentals import StockFundamentalsMetric
 
 # List of all available metrics
 _METRICS: List[BaseMetric] = [
     StockPriceMetric(),
+    StockFundamentalsMetric(),
+    
 ]
 
 async def evaluate_all(ticker: str) -> Dict[str, Any]:

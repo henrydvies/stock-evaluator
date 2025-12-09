@@ -2,3 +2,4 @@ struct
 __pychace__/
 
 *.pyc
+.env
