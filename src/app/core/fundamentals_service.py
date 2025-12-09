@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+from math import isfinite
 from app.utils.ticker import normalise_and_validate_ticker
 from app.providers.yahoo_client import YahooClient, YahooSymbolNotFoundError, YahooClientError
 from app.schemas.fundamentals import FundamentalsResponse
@@ -22,7 +23,7 @@ def _latest_numeric(data: Dict[Any, Any]) -> Optional[float]:
         return None
     try:
         latest_period = sorted(data.keys())[-1]
-        return float(data[latest_period])
+        return _safe_float(data[latest_period])
     except Exception:
         return None
     
@@ -58,7 +59,7 @@ class FundamentalsService:
         market_cap = _safe_float(info.get("marketCap"))
         pe_ttm = _safe_float(info.get("trailingPE"))
         pe_forward = _safe_float(info.get("forwardPE"))
-        dividend_yield = _percent_from_decimal(info.get("dividendYield"))
+        dividend_yield = _safe_float(info.get("dividendYield"))
         
         free_cashflow = _latest_numeric(cashflow.get("Free Cash Flow", {}))
         fcf_yield = _ratio_percent(free_cashflow, market_cap)
@@ -93,9 +94,11 @@ def _safe_float(value: Any) -> Optional[float]:
         Optional[float]: The float value or None if conversion fails.
     """
     try:
-        return float(value)
+        num = float(value)
     except (TypeError, ValueError):
         return None
+
+    return num if isfinite(num) else None
     
 def _percent_from_decimal(value: Any) -> Optional[float]:
     """
@@ -125,7 +128,9 @@ def _ratio_percent(numerator: Optional[float], denominator: Optional[float]) -> 
     """
     if numerator is None or denominator is None or denominator == 0:
         return None
-    return (numerator / denominator) * 100.0
+    ratio = (numerator / denominator) * 100.0
+    
+    return ratio if isfinite(ratio) else None
 
 def _revenue_cagr_percent(revenue_data: Dict[Any, Any], years: int = 5) -> Optional[float]:
     """
@@ -142,11 +147,13 @@ def _revenue_cagr_percent(revenue_data: Dict[Any, Any], years: int = 5) -> Optio
         return None
     try:
         periods = sorted(revenue_data.keys())
-        start = float(revenue_data[periods[0]])
-        end = float(revenue_data[periods[-1]])
+        start = _safe_float(revenue_data[periods[0]])
+        end = _safe_float(revenue_data[periods[-1]])
     except Exception:
         return None
     
+    if start is None or end is None:
+        return None
     if start <= 0 or end <= 0:
         return None
     
