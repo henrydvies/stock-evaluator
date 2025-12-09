@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
-from app.api.routes import tickers, price
+
+from app.api.routes import tickers, price, fundamentals, eval
 from app.core.config import settings
 
 def create_app() -> FastAPI:
@@ -14,7 +15,13 @@ def create_app() -> FastAPI:
         title=settings.app_name,)
     
     app.include_router(tickers.router)
+    
+    # Individual metric routes
     app.include_router(price.router)
+    app.include_router(fundamentals.router)
+    
+    # Evaluate all
+    app.include_router(eval.router)
     
     return app
 
