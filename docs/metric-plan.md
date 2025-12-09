@@ -8,6 +8,9 @@ fundamentals.pe_ttm
 fundamentals.pe_forward
 fundamentals.market_cap
 fundamentals.dividend_yield
+fundamentals.return_on_invested_capital
+fundamentals.fcf_yield
+fundamentals.revenue_growth_5y
 
 ## Technical
 technical.sma_50d   -   simple moving advantage
