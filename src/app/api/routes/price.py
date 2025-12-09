@@ -3,20 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.price_service import PriceService, PriceDataError
 from app.providers.yahoo_client import YFinanceYahooClient, YahooClientError, YahooSymbolNotFoundError
 from app.utils.ticker import InvalidTickerError
+from app.schemas.ticker import ErrorResponse
 from app.schemas.price import PriceResponse
-from app.schemas.ticker import ErrorResponse # Existing error schema
+from app.metrics.price import get_price_service
 
 router = APIRouter(prefix="/price", tags=["Price"])
-
-def get_price_service() -> PriceService:
-    """
-    Provides an instance of PriceService with a YahooClient.
-
-    Returns:
-        PriceService: An instance of PriceService.
-    """
-    client = YFinanceYahooClient()
-    return PriceService(yahoo_client=client)
 
 @router.get(
     "/{symbol}",

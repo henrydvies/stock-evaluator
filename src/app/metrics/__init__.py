@@ -8,6 +8,7 @@ from .fundamentals import StockFundamentalsMetric
 _METRICS: List[BaseMetric] = [
     StockPriceMetric(),
     StockFundamentalsMetric(),
+    
 ]
 
 async def evaluate_all(ticker: str) -> Dict[str, Any]:
