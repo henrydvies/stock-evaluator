@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from typing import Protocol, Any, Dict, List
 
 import asyncio
-import yfinance as yf
-import pandas as pd 
 
 class YahooClientError(Exception):
     """"""
@@ -77,6 +75,8 @@ class YFinanceYahooClient:
         """
         
         def _get_quote_sync() -> Dict[str, Any]:
+            import yfinance as yf
+
             ticker = yf.Ticker(symbol)
             
             info = ticker.info
@@ -122,6 +122,8 @@ class YFinanceYahooClient:
         """
         
         def _get_history_sync() -> List[Dict[str, Any]]:
+            import yfinance as yf
+
             ticker = yf.Ticker(symbol)
             
             # Fetch history with a bit of buffer
@@ -159,6 +161,9 @@ class YFinanceYahooClient:
         """
         
         def _get_fundamentals_sync() -> Dict[str, Any]:
+            import pandas as pd
+            import yfinance as yf
+
             ticker = yf.Ticker(symbol)
             
             info = ticker.info
@@ -220,6 +225,9 @@ class YFinanceYahooClient:
         """
         
         def _get_technical_sync() -> Dict[str, Any]:
+            import pandas as pd
+            import yfinance as yf
+
             ticker = yf.Ticker(symbol)
             
             # Get the history for 200 days to calculate the SMAs
