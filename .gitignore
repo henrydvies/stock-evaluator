@@ -1,6 +1,6 @@
 struct
 __pycache__/
-/pytest_cache/
+.pytest_cache/
 
 *.pyc
 .env
