@@ -25,6 +25,13 @@ class StockTechnicalMetric(BaseMetric):
         Returns:
             Dict[str, Any]: Dictionary of technical indicators.
         """
-        return await self.service.get_technical_for_symbol(ticker)
+        res = await self.service.get_technical_for_symbol(ticker)
+        return {
+            "technical.sma_50d": res.sma_50d,
+            "technical.sma_200d": res.sma_200d,
+            "technical.above_200d": res.above_200d,
+            "technical.rsi_14d": res.rsi_14d,
+            "technical.volatility_30": res.volatility_30,
+        }
     
     

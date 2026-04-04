@@ -285,5 +285,10 @@ async def ticker_exists(symbol: str, client: YahooClient) -> bool:
         return True
     except YahooSymbolNotFoundError:
         return False
-    except Exception as e:
-        raise YahooClientError(f"Error talking to Yahoo Finance: {e}") from e
+        try:
+            return await asyncio.to_thread(_get_technical_sync)
+        except YahooSymbolNotFoundError:
+            raise
+        except Exception as e:
+            raise YahooClientError(f"Error fetching technicals for '{symbol}': {e}") from e
+

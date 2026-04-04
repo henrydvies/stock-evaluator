@@ -25,4 +25,13 @@ class StockFundamentalsMetric(BaseMetric):
         Returns:
             Dict[str, Any]: A dictionary containing fundamentals metrics.
         """
-        return await self.service.get_fundamentals_for_symbol(ticker)
+        res = await self.service.get_fundamentals_for_symbol(ticker)
+        return {
+            "fundamentals.pe_ttm": res.pe_ttm,
+            "fundamentals.pe_forward": res.pe_forward,
+            "fundamentals.market_cap": res.market_cap,
+            "fundamentals.dividend_yield": res.dividend_yield,
+            "fundamentals.return_on_invested_capital": res.return_on_invested_capital,
+            "fundamentals.fcf_yield": res.fcf_yield,
+            "fundamentals.revenue_growth_5y": res.revenue_growth_5y,
+        }
