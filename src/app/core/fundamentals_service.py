@@ -5,7 +5,7 @@ from math import isfinite
 from app.utils.ticker import normalise_and_validate_ticker
 from app.providers.yahoo_client import YahooClient, YahooSymbolNotFoundError, YahooClientError
 from app.schemas.fundamentals import FundamentalsResponse
-
+from app.core.utils.service_helpers import _latest_numeric
 class FundamentalsDataError(Exception):
     """Custom exception for fundamentals data retrieval errors."""
     

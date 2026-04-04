@@ -49,10 +49,22 @@ class YahooClient(Protocol):
             Dict[str, Any]: Raw fundamentals data.
         """
         ...
+        
+    async def fetch_technical(self, symbol: str) -> Dict[str, Any]:
+        """
+        Fetch technical indicators for a given stock symbol.
 
+        Args:
+            symbol (str): Stock ticker symbol.
+
+        Returns:
+            Dict[str, Any]: Raw technical data.
+        """
+        ...
 @dataclass
 class YFinanceYahooClient:
     """
+    Yahoo Finance client implementation using yfinance.
     """
     async def fetch_quote(self, symbol: str) -> Dict[str, Any]:
         """
@@ -196,7 +208,58 @@ class YFinanceYahooClient:
         except Exception as e:
             raise YahooClientError(f"Error fetching fundamentals for '{symbol}': {e}") from e
             
+    
+    async def fetch_technical(self, symbol: str) -> Dict[str, Any]:
+        """
+        Fetch technical indicators for a given stock symbol using yfinance.
+
+        Args:
+            symbol (str): Stock ticker symbol.
+        Returns:
+            Dict[str, Any]: Raw technical data.
+        """
         
+        def _get_technical_sync() -> Dict[str, Any]:
+            ticker = yf.Ticker(symbol)
+            
+            # Get the history for 200 days to calculate the SMAs
+            hist = ticker.history(period="200d", interval="1d")
+            
+            if hist.empty:
+                raise YahooSymbolNotFoundError(f"Symbol '{symbol}' not found.")
+            
+            hist.sort_index(inplace=True)
+            
+            # Calculate the SMAs
+            sma_50d = hist["Close"].rolling(window=50).mean().iloc[-1]
+            sma_200d = hist["Close"].rolling(window=200).mean().iloc[-1]
+            
+            # Get the current price
+            current_price = hist["Close"].iloc[-1]
+            
+            # Calculate if above 200d SMA
+            above_200d = current_price > sma_200d if pd.notna(sma_200d) else None
+            
+            # Calculate RSI 14d
+            delta = hist["Close"].diff()
+            gain = delta.where(delta > 0, 0.0)
+            loss = -delta.where(delta < 0, 0.0)
+            avg_gain = gain.rolling(window=14).mean().iloc[-1]
+            avg_loss = loss.rolling(window=14).mean().iloc[-1]
+            rsi_14d = 100 - (100 / (1 + (avg_gain / avg_loss))) if avg_loss != 0 else None
+            
+            # Calculate volatility as std dev of last 30 changes in closing prices
+            volatility_30 = hist["Close"].diff().rolling(window=30).std().iloc[-1]
+            
+            return {
+                "symbol": symbol,
+                "sma_50d": float(sma_50d) if pd.notna(sma_50d) else None,
+                "sma_200d": float(sma_200d) if pd.notna(sma_200d) else None,
+                "above_200d": above_200d,
+                "rsi_14d": float(rsi_14d) if pd.notna(rsi_14d) else None,
+                "volatility_30": float(volatility_30) if pd.notna(volatility_30) else None
+            }
+            
         
         
 async def ticker_exists(symbol: str, client: YahooClient) -> bool:
