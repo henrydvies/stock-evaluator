@@ -3,12 +3,12 @@ from enum import Enum
 
 # Enum for the status of sentiment analysis based of data availability and confidence.
 class SentimentStatus(str, Enum):
-    OK = "OK"
-    LOW_DATA = "LOW_DATA"
-    NOISY = "NOISY"
-    AMBIGUOUS_ENTITY = "AMBIGUOUS_ENTITY"
-    STALE = "STALE"
-    SOURCE_ERROR = "SOURCE_ERROR"
+    OK = "ok"
+    LOW_DATA = "low_data"
+    NOISY = "noisy"
+    AMBIGUOUS_ENTITY = "ambiguous_entity"
+    STALE = "stale"
+    SOURCE_ERROR = "source_error"
 
 class SentimentResponse(BaseModel):
     ## Reddit Based
