@@ -6,4 +6,5 @@ set PYTHONPATH=%CD%
 python -m uvicorn app.main:app --app-dir src --host 0.0.0.0 --port 8000 --reload
 
 To run unit test:
-python -m pytest
+ - python -m pytest    &&    
+ - python -m pytest --cov=src/app --cov-report=term-missing --cov-report=html --cov-branch
