@@ -16,8 +16,8 @@ class RedditMention:
     source_type: str # post/ comment
     text: str
     score: int
-    num_comments: Optional[int] = None
     permalink: str
+    num_comments: Optional[int] = None
     
 class RedditProvider(Protocol):
     async def fetch_mentions(self, symbol: str, lookback_days: int, limit: int = 1000) -> List[RedditMention]:
@@ -74,13 +74,14 @@ class AsyncPrawRedditProvider:
         try:
             import asyncpraw
         except Exception as e:
-            raise RedditProviderError(f"Failed to import asyncpraw: {e}")
+            raise RedditProviderError(f"Failed to import asyncpraw: {e}") from e
         
         cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)  
         symbol_upper = symbol.upper()
         queries = [f"{symbol_upper}", f"${symbol_upper}"]
         
         mentions_by_id: dict[str, RedditMention] = {}
+        reddit = None
         
         try:
             reddit = asyncpraw.Reddit(
@@ -125,46 +126,59 @@ class AsyncPrawRedditProvider:
                                 num_comments=int(submission.num_comments or 0),
                                 permalink=f"https://reddit.com{submission.permalink}",
                             )
-                    if self.include_comments and len(mentions_by_id) < limit:
-                        await submission.comments.replace_more(limit=0)
-                        comments_seen = 0
-                        
-                        for comment in submission.comments.list():
-                            if comments_seen >= self.max_comments_per_post:
-                                break
-                            
-                            c_created = datetime.fromtimestamp(comment.created_utc, tz=timezone.utc)
-                            
-                            if c_created < cutoff:
-                                continue
-                            
-                            body = (comment.body or "").strip()
-                            if not body or body in ("[deleted]", "[removed]"):
-                                continue
-                            
-                            body_upper = body.upper()
-                            if symbol_upper in body_upper or f"${symbol_upper}" in body_upper:
-                                continue
-                            
-                            key = f"c_{comment.id}"
-                            if key not in mentions_by_id:
-                                mentions_by_id[key] = RedditMention(
-                                    id=key,
-                                    symbol=symbol_upper,
-                                    created_utc=c_created,
-                                    subreddit=sub_name,
-                                    source_type="comment",
-                                    text=body,
-                                    score=int(comment.score or 0),
-                                    permalink=f"https://reddit.com{comment.permalink}",
-                                )
-                                comments_seen += 1
+
+                        if self.include_comments and len(mentions_by_id) < limit and int(submission.num_comments or 0) > 0:
+                            try:
+                                comments_obj = getattr(submission, "comments", None)
+                                if comments_obj is None:
+                                    continue
+
+                                await comments_obj.replace_more(limit=0)
+                                comments_seen = 0
+
+                                for comment in comments_obj.list() or []:
+                                    if comments_seen >= self.max_comments_per_post:
+                                        break
+
+                                    c_created = datetime.fromtimestamp(comment.created_utc, tz=timezone.utc)
+                                    if c_created < cutoff:
+                                        continue
+
+                                    body = (comment.body or "").strip()
+                                    if not body or body in ("[deleted]", "[removed]"):
+                                        continue
+
+                                    body_upper = body.upper()
+                                    if symbol_upper not in body_upper and f"${symbol_upper}" not in body_upper:
+                                        continue
+
+                                    key = f"c_{comment.id}"
+                                    if key not in mentions_by_id:
+                                        mentions_by_id[key] = RedditMention(
+                                            id=key,
+                                            symbol=symbol_upper,
+                                            created_utc=c_created,
+                                            subreddit=sub_name,
+                                            source_type="comment",
+                                            text=body,
+                                            score=int(comment.score or 0),
+                                            permalink=f"https://reddit.com{comment.permalink}",
+                                        )
+                                        comments_seen += 1
+                            except Exception:
+                                # Skip problematic comment trees and continue with other submissions.
+                                pass
+
                     if len(mentions_by_id) >= limit:
                         break
-                        
-            await reddit.close()
             
             return sorted(mentions_by_id.values(), key=lambda m: m.created_utc, reverse=True)
             
         except Exception as e:
-            raise RedditProviderError(f"Failed fetching Reddit mentions for '{symbol_upper}': {e}")
+            raise RedditProviderError(f"Failed fetching Reddit mentions for '{symbol_upper}': {e}") from e
+        finally:
+            if reddit is not None:
+                try:
+                    await reddit.close()
+                except Exception:
+                    pass
