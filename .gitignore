@@ -1,5 +1,7 @@
 struct
-__pychace__/
-
+__pycache__/
+.pytest_cache/
+.venv/
 *.pyc
 .env
+.coverage

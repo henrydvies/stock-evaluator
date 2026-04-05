@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from typing import Protocol, Any, Dict, List
 
 import asyncio
-import yfinance as yf
-import pandas as pd 
 
 class YahooClientError(Exception):
     """"""
@@ -49,130 +47,113 @@ class YahooClient(Protocol):
             Dict[str, Any]: Raw fundamentals data.
         """
         ...
-
-@dataclass
-class YFinanceYahooClient:
-    """
-    """
-    async def fetch_quote(self, symbol: str) -> Dict[str, Any]:
+        
+    async def fetch_technical(self, symbol: str) -> Dict[str, Any]:
         """
-        Fetch quote data for a given stock symbol using yfinance.
+        Fetch technical indicators for a given stock symbol.
 
         Args:
             symbol (str): Stock ticker symbol.
+
         Returns:
-            Dict[str, Any]: Quote data.
+            Dict[str, Any]: Raw technical data.
         """
-        
+        ...
+@dataclass
+class YFinanceYahooClient:
+    """Yahoo Finance client implementation using yfinance."""
+
+    async def fetch_quote(self, symbol: str) -> Dict[str, Any]:
+        """Fetch quote data for a given stock symbol using yfinance."""
+
         def _get_quote_sync() -> Dict[str, Any]:
+            import yfinance as yf
+
             ticker = yf.Ticker(symbol)
-            
             info = ticker.info
-            
+
             if info is None:
-                # Fallback
                 hist = ticker.history(period="1d")
                 if hist.empty:
                     raise YahooSymbolNotFoundError(f"Symbol '{symbol}' not found.")
 
                 last_row = hist.iloc[-1]
-                
                 return {
                     "symbol": symbol,
                     "regularMarketPrice": float(last_row["Close"]),
                 }
+
             data = dict(info)
-            
             if not data:
                 raise YahooSymbolNotFoundError(f"Symbol '{symbol}' not found.")
-            
-            # Check symbol in the info
+
             data.setdefault("symbol", symbol)
             return data
-        
+
         try:
             return await asyncio.to_thread(_get_quote_sync)
         except YahooSymbolNotFoundError:
             raise
         except Exception as e:
-            raise YahooClientError(f"Error fetching quote for '{symbol}': {e}") from e      
-        
+            raise YahooClientError(f"Error fetching quote for '{symbol}': {e}") from e
+
     async def fetch_daily_history(self, symbol: str, days: int) -> List[Dict[str, Any]]:
-        """
-        Fetch daily close prices for the 'days' days.
+        """Fetch daily close prices for the requested number of days."""
 
-        Args:
-            symbol (str): Stock ticker symbol.
-            days (int): Number of days of history to fetch.
-
-        Returns:
-            List[Dict[str, Any]]: Daily historical data.
-        """
-        
         def _get_history_sync() -> List[Dict[str, Any]]:
+            import yfinance as yf
+
             ticker = yf.Ticker(symbol)
-            
-            # Fetch history with a bit of buffer
             hist = ticker.history(period=f"{days + 2}d", interval="1d")
-            
+
             if hist.empty:
                 raise YahooSymbolNotFoundError(f"History for '{symbol}' not found.")
-            
-            # Build a list of {date, close} sorted by date
+
             records: List[Dict[str, Any]] = []
             for ts, row in hist.iterrows():
                 records.append({
                     "date": ts.to_pydatetime(),
                     "close": float(row["Close"]),
-                    }
-                )
-            
-            # Sort by date
+                })
+
             records.sort(key=lambda x: x["date"])
-            
             return records[-days:]
+
         try:
             return await asyncio.to_thread(_get_history_sync)
         except YahooSymbolNotFoundError:
             raise
         except Exception as e:
             raise YahooClientError(f"Error fetching history for '{symbol}': {e}") from e
-    
-    async def fetch_fundamentals(self, symbol: str) -> Dict[str, Any]:
-        """
-        Fetch raw fundamentals for a given stock symbol using yfinance.
 
-        Args:
-            symbol (str): Stock ticker symbol.
-        """
-        
+    async def fetch_fundamentals(self, symbol: str) -> Dict[str, Any]:
+        """Fetch raw fundamentals for a given stock symbol using yfinance."""
+
         def _get_fundamentals_sync() -> Dict[str, Any]:
+            import pandas as pd
+            import yfinance as yf
+
             ticker = yf.Ticker(symbol)
-            
             info = ticker.info
             if info is None or not info:
                 hist = ticker.history(period="1d")
                 if hist.empty:
                     raise YahooSymbolNotFoundError(f"Symbol '{symbol}' not found.")
-                
-            # Cpmvert to dict
+
             info_dict: Dict[str, Any] = dict(info) if info else {}
-            
-            # Get the income statement
+
             income_stmt_df: pd.DataFrame = getattr(ticker, "income_stmt", None)
             if income_stmt_df is None or income_stmt_df.empty:
                 income_stmt: Dict[str, Any] = {}
             else:
                 income_stmt = income_stmt_df.to_dict(orient="index")
-            
-            # Get the balance sheet
+
             balance_sheet_df: pd.DataFrame = getattr(ticker, "balance_sheet", None)
             if balance_sheet_df is None or balance_sheet_df.empty:
                 balance_sheet: Dict[str, Any] = {}
             else:
                 balance_sheet = balance_sheet_df.to_dict(orient="index")
-            
-            # Get the cashflow statement
+
             cashflow_df: pd.DataFrame = getattr(ticker, "cashflow", None)
             if cashflow_df is None or cashflow_df.empty:
                 cashflow: Dict[str, Any] = {}
@@ -189,15 +170,59 @@ class YFinanceYahooClient:
                 "balance_sheet": balance_sheet,
                 "cashflow": cashflow,
             }
+
         try:
             return await asyncio.to_thread(_get_fundamentals_sync)
         except YahooSymbolNotFoundError:
             raise
         except Exception as e:
             raise YahooClientError(f"Error fetching fundamentals for '{symbol}': {e}") from e
-            
-        
-        
+
+    async def fetch_technical(self, symbol: str) -> Dict[str, Any]:
+        """Fetch technical indicators for a given stock symbol using yfinance."""
+
+        def _get_technical_sync() -> Dict[str, Any]:
+            import pandas as pd
+            import yfinance as yf
+
+            ticker = yf.Ticker(symbol)
+            hist = ticker.history(period="200d", interval="1d")
+
+            if hist.empty:
+                raise YahooSymbolNotFoundError(f"Symbol '{symbol}' not found.")
+
+            hist.sort_index(inplace=True)
+
+            sma_50d = hist["Close"].rolling(window=50).mean().iloc[-1]
+            sma_200d = hist["Close"].rolling(window=200).mean().iloc[-1]
+
+            current_price = hist["Close"].iloc[-1]
+            above_200d = current_price > sma_200d if pd.notna(sma_200d) else None
+
+            delta = hist["Close"].diff()
+            gain = delta.where(delta > 0, 0.0)
+            loss = -delta.where(delta < 0, 0.0)
+            avg_gain = gain.rolling(window=14).mean().iloc[-1]
+            avg_loss = loss.rolling(window=14).mean().iloc[-1]
+            rsi_14d = 100 - (100 / (1 + (avg_gain / avg_loss))) if avg_loss != 0 else None
+
+            volatility_30 = hist["Close"].diff().rolling(window=30).std().iloc[-1]
+
+            return {
+                "symbol": symbol,
+                "sma_50d": float(sma_50d) if pd.notna(sma_50d) else None,
+                "sma_200d": float(sma_200d) if pd.notna(sma_200d) else None,
+                "above_200d": above_200d,
+                "rsi_14d": float(rsi_14d) if pd.notna(rsi_14d) else None,
+                "volatility_30": float(volatility_30) if pd.notna(volatility_30) else None,
+            }
+
+        try:
+            return await asyncio.to_thread(_get_technical_sync)
+        except YahooSymbolNotFoundError:
+            raise
+        except Exception as e:
+            raise YahooClientError(f"Error fetching technicals for '{symbol}': {e}") from e
         
 async def ticker_exists(symbol: str, client: YahooClient) -> bool:
     """
@@ -216,3 +241,4 @@ async def ticker_exists(symbol: str, client: YahooClient) -> bool:
         return False
     except Exception as e:
         raise YahooClientError(f"Error talking to Yahoo Finance: {e}") from e
+
