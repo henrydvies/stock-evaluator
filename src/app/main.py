@@ -20,7 +20,6 @@ def create_app() -> FastAPI:
     app.include_router(price.router)
     app.include_router(fundamentals.router)
     app.include_router(technical.router)
-    app.include_router(eval.router)
     
     # Evaluate all
     app.include_router(eval.router)
