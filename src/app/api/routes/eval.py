@@ -6,6 +6,7 @@ from app.schemas.ticker import ErrorResponse
 
 from app.utils.ticker import InvalidTickerError
 from app.providers.yahoo_client import YahooClientError, YahooSymbolNotFoundError
+from app.providers.finnhub_client import FinnhubClientError
 from app.core.price_service import PriceDataError
 from app.core.fundamentals_service import FundamentalsDataError
 
@@ -59,8 +60,17 @@ async def evaluate_stock(
             detail={
                 "error": "YAHOO_CLIENT_ERROR",
                 "message": str(e),
-                "details": "Error occurred while communicating with Yahoo Finance."
+                "details": "Error occurred while communicating with Yahoo Finance.",
             },
         )
-    
+    except FinnhubClientError as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={
+                "error": "FINNHUB_CLIENT_ERROR",
+                "message": str(e),
+                "details": "Error occurred while communicating with Finnhub.",
+            },
+        )
+
     

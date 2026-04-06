@@ -15,65 +15,141 @@ class SentimentStatus(str, Enum):
 class SentimentResponse(BaseModel):
     """
     Market narrative sentiment.
+
+    Primary path: Finnhub GET /company-news (headlines + summaries), then VADER
+    compound scores aggregated in-process. Analyst counts come from Finnhub
+    GET /stock/recommendation (recommendation trends; see Finnhub docs). Finnhub
+    /news-sentiment is not used for the narrative score fields unless separately wired.
     """
 
-    ## Finnhub sourced sentiment fields
+    ## VADER-on-company-news (plus reserved Finnhub /news-sentiment slots)
     narrative_news_score: Optional[float] = Field(
         None,
-        description="Finnhub companyNewsScore mapped to ~[-1, 1] when /news-sentiment is available; null if not licensed.",
+        description=(
+            "Mean VADER compound score (~[-1, 1]) over analyzed company-news texts "
+            "(headline + summary). Null when no articles had usable text after dedupe."
+        ),
     )
     narrative_bullish_pct: Optional[float] = Field(
         None,
-        description="Share of sampled company news classified bullish (0–100) from /news-sentiment; null if unavailable.",
+        description=(
+            "Share of scored articles with VADER compound ≥ 0.05 (0–100). "
+            "Null when no articles were scored."
+        ),
     )
     narrative_bearish_pct: Optional[float] = Field(
         None,
-        description="Share of sampled company news classified bearish (0–100) from /news-sentiment; null if unavailable.",
+        description=(
+            "Share of scored articles with VADER compound ≤ -0.05 (0–100). "
+            "Null when no articles were scored."
+        ),
     )
     narrative_buzz: Optional[float] = Field(
         None,
-        description="Normalized buzz / attention from /news-sentiment when available; null on free-tier-only access.",
+        description=(
+            "Reserved for Finnhub /news-sentiment buzz when that endpoint is integrated; "
+            "currently not populated."
+        ),
     )
     narrative_article_count_proxy: Optional[int] = Field(
         None,
-        description="Article volume proxy from /news-sentiment buzz fields when available; on free tier use narrative_headline_count instead.",
+        description=(
+            "Reserved for Finnhub /news-sentiment article-count proxy; "
+            "use narrative_headline_count for the company-news + VADER path."
+        ),
     )
     narrative_sector_news_score: Optional[float] = Field(
         None,
-        description="Sector average news score from /news-sentiment when provided.",
+        description=(
+            "Reserved for Finnhub /news-sentiment sector benchmark; currently not populated."
+        ),
     )
     narrative_vs_sector_news_score: Optional[float] = Field(
         None,
-        description="Company vs sector narrative gap when sector benchmark is present.",
+        description=(
+            "Reserved for company vs sector gap from /news-sentiment; currently not populated."
+        ),
     )
 
     narrative_confidence: float = Field(
         ...,
-        description="0–1 confidence; on company-news-only tier, derive mainly from headline count/source diversity.",
+        description=(
+            "0–1 confidence from local aggregation only (not a Finnhub field): "
+            "grows with the number of scored articles and is reduced when VADER "
+            "compound scores disagree (higher spread across articles)."
+        ),
     )
     narrative_status: SentimentStatus = Field(
         ...,
-        description="Quality gate for narrative data (ok, low_data, noisy, source_error, etc.).",
+        description=(
+            "Quality gate for the VADER-on-company-news portion only: ok, low_data, or noisy "
+            "(from article count and compound spread). Other SentimentStatus values are reserved; "
+            "Finnhub request failures surface as HTTP 502, not in this field."
+        ),
     )
     narrative_fetched_at: str = Field(
         ...,
-        description="ISO-8601 timestamp when narrative data was assembled.",
+        description="ISO-8601 timestamp when this sentiment snapshot was assembled (news + analyst trends).",
     )
     narrative_provider: str = Field(
         ...,
-        description="Upstream provider id (e.g. finnhub).",
+        description=(
+            "Upstream provider for Finnhub-sourced inputs (company news + analyst recommendation trends); "
+            "VADER narrative scores are computed locally from article text."
+        ),
     )
 
-    # --- Finnhub GET /company-news (usually available on free tier; date window) ---
+    # --- Company-news payload + VADER scoring window ---
     narrative_headline_count: Optional[int] = Field(
         None,
-        description="Number of company-news items in the requested window.",
+        description=(
+            "Count of company-news articles included in VADER scoring after dedupe, "
+            "recency ordering, max-articles cap, and dropping rows with no headline/summary text."
+        ),
     )
     narrative_headline_distinct_sources: Optional[int] = Field(
         None,
-        description="Distinct source count from company-news payload when derivable.",
+        description="Distinct non-empty `source` values among those scored articles.",
     )
     narrative_headline_sample_titles: Optional[List[str]] = Field(
         None,
-        description="Sample headlines; respect Finnhub ToS for display/redistribution.",
+        description="Sample headlines from scored articles (newest first); respect Finnhub ToS for display/redistribution.",
+    )
+
+    # --- Finnhub GET /stock/recommendation (analyst trends; same sentiment payload) ---
+    analyst_recommendation_period: Optional[str] = Field(
+        None,
+        description="Reporting period for the latest row from Finnhub recommendation trends (e.g. month-end date).",
+    )
+    analyst_recommendation_strong_buy: Optional[int] = Field(
+        None,
+        description="Count of strong buy ratings in the latest recommendation row.",
+    )
+    analyst_recommendation_buy: Optional[int] = Field(
+        None,
+        description="Count of buy ratings in the latest recommendation row.",
+    )
+    analyst_recommendation_hold: Optional[int] = Field(
+        None,
+        description="Count of hold ratings in the latest recommendation row.",
+    )
+    analyst_recommendation_sell: Optional[int] = Field(
+        None,
+        description="Count of sell ratings in the latest recommendation row.",
+    )
+    analyst_recommendation_strong_sell: Optional[int] = Field(
+        None,
+        description="Count of strong sell ratings in the latest recommendation row.",
+    )
+    analyst_recommendation_total: Optional[int] = Field(
+        None,
+        description="Total analyst ratings in the latest row (sum of strong buy through strong sell).",
+    )
+    analyst_recommendation_bullish_pct: Optional[float] = Field(
+        None,
+        description="Share of analysts bullish (strong buy + buy) as 0–100; null if total is zero.",
+    )
+    analyst_recommendation_bearish_pct: Optional[float] = Field(
+        None,
+        description="Share of analysts bearish (sell + strong sell) as 0–100; null if total is zero.",
     )
