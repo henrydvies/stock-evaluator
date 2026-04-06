@@ -4,3 +4,4 @@ uvicorn
 yfinance
 asyncpraw
 dotenv
+httpx

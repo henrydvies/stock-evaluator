@@ -14,55 +14,42 @@ class SentimentStatus(str, Enum):
 
 class SentimentResponse(BaseModel):
     """
-    Market narrative sentiment backed primarily by Finnhub.
-    """
-    ## Reddit Based
-    """
-    reddit_score_7d: float = Field(..., description="Average sentiment score from Reddit posts mentioning the stock over the past 7 days.")
-    reddit_score_30d: float = Field(..., description="Average sentiment score from Reddit posts mentioning the stock over the past 30 days.")
-    reddit_confidence_7d: float = Field(..., description="Confidence level of the Reddit sentiment score over the past 7 days.")
-    reddit_confidence_30d: float = Field(..., description="Confidence level of the Reddit sentiment score over the past 30 days.")
-    reddit_mentions_7d: int = Field(..., description="Number of mentions of the stock on Reddit over the past 7 days.")
-    reddit_mentions_30d: int = Field(..., description="Number of mentions of the stock on Reddit over the past 30 days.")
-    reddit_sources_7d: int = Field(..., description="Number of unique Reddit sources mentioning the stock over the past 7 days.")
-    reddit_sources_30d: int = Field(..., description="Number of unique Reddit sources mentioning the stock over the past 30 days.")
-    reddit_status_7d: SentimentStatus = Field(..., description="Status of the Reddit sentiment analysis over the past 7 days.")
-    reddit_status_30d: SentimentStatus = Field(..., description="Status of the Reddit sentiment analysis over the past 30 days.")
+    Market narrative sentiment.
     """
 
-    ## Finnhub based
-    narrative_news_score: float = Field(
-        ...,
-        description="Normalized composite news sentiment for the company (~[-1, 1] or [0, 1]; map from Finnhub companyNewsScore and document scale in service code).",
+    ## Finnhub sourced sentiment fields
+    narrative_news_score: Optional[float] = Field(
+        None,
+        description="Finnhub companyNewsScore mapped to ~[-1, 1] when /news-sentiment is available; null if not licensed.",
     )
-    narrative_bullish_pct: float = Field(
-        ...,
-        description="Share of sampled company news classified bullish (from Finnhub sentiment object; 0–100).",
+    narrative_bullish_pct: Optional[float] = Field(
+        None,
+        description="Share of sampled company news classified bullish (0–100) from /news-sentiment; null if unavailable.",
     )
-    narrative_bearish_pct: float = Field(
-        ...,
-        description="Share of sampled company news classified bearish (from Finnhub sentiment object; 0–100).",
+    narrative_bearish_pct: Optional[float] = Field(
+        None,
+        description="Share of sampled company news classified bearish (0–100) from /news-sentiment; null if unavailable.",
     )
-    narrative_buzz: float = Field(
-        ...,
-        description="Normalized attention / buzz index from Finnhub buzz metrics (exact formula in service; higher = more news flow vs baseline).",
+    narrative_buzz: Optional[float] = Field(
+        None,
+        description="Normalized buzz / attention from /news-sentiment when available; null on free-tier-only access.",
     )
-    narrative_article_count_proxy: int = Field(
-        ...,
-        description="Proxy for volume of recent company news (e.g. articles-in-window from Finnhub buzz or related fields).",
+    narrative_article_count_proxy: Optional[int] = Field(
+        None,
+        description="Article volume proxy from /news-sentiment buzz fields when available; on free tier use narrative_headline_count instead.",
     )
     narrative_sector_news_score: Optional[float] = Field(
         None,
-        description="Sector average news score from Finnhub when provided; for relative context.",
+        description="Sector average news score from /news-sentiment when provided.",
     )
     narrative_vs_sector_news_score: Optional[float] = Field(
         None,
-        description="Derived gap between company and sector narrative (e.g. company score minus sector average).",
+        description="Company vs sector narrative gap when sector benchmark is present.",
     )
 
     narrative_confidence: float = Field(
         ...,
-        description="0–1 confidence in narrative fields; rises with article volume/buzz, falls when ambiguous or sparse.",
+        description="0–1 confidence; on company-news-only tier, derive mainly from headline count/source diversity.",
     )
     narrative_status: SentimentStatus = Field(
         ...,
@@ -70,44 +57,23 @@ class SentimentResponse(BaseModel):
     )
     narrative_fetched_at: str = Field(
         ...,
-        description="ISO-8601 timestamp when narrative data was fetched from the provider.",
+        description="ISO-8601 timestamp when narrative data was assembled.",
     )
     narrative_provider: str = Field(
         ...,
-        description="Identifier for upstream provider (e.g. finnhub).",
+        description="Upstream provider id (e.g. finnhub).",
     )
 
-
+    # --- Finnhub GET /company-news (usually available on free tier; date window) ---
     narrative_headline_count: Optional[int] = Field(
         None,
-        description="Number of company-news items returned for the requested window; strengthens confidence when high.",
+        description="Number of company-news items in the requested window.",
     )
     narrative_headline_distinct_sources: Optional[int] = Field(
         None,
-        description="Count of distinct news sources in that window when derivable from company-news payload.",
+        description="Distinct source count from company-news payload when derivable.",
     )
     narrative_headline_sample_titles: Optional[List[str]] = Field(
         None,
-        description="Up to N recent headlines for context or debugging; omit or empty if ToS/display rules forbid redistribution.",
-    )
-
-    social_bullish_pct: Optional[float] = Field(
-        None,
-        description="From stock/social-sentiment: bullish share or analogous metric (0–100) when the API provides it.",
-    )
-    social_bearish_pct: Optional[float] = Field(
-        None,
-        description="From stock/social-sentiment: bearish share or analogous metric (0–100) when the API provides it.",
-    )
-    social_attention_score: Optional[float] = Field(
-        None,
-        description="From stock/social-sentiment: normalized volume/attention when available (platform-dependent).",
-    )
-    social_net_score: Optional[float] = Field(
-        None,
-        description="Derived single scalar from social sentiment payload (~[-1, 1]); null if insufficient data.",
-    )
-    narrative_social_divergence: Optional[float] = Field(
-        None,
-        description="Optional derived gap between news tilt and social tilt; large absolute values flag media vs crowd mismatch.",
+        description="Sample headlines; respect Finnhub ToS for display/redistribution.",
     )
