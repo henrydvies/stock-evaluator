@@ -5,27 +5,9 @@ from math import isfinite
 from app.utils.ticker import normalise_and_validate_ticker
 from app.providers.yahoo_client import YahooClient, YahooSymbolNotFoundError, YahooClientError
 from app.schemas.fundamentals import FundamentalsResponse
-
+from app.core.utils.service_helpers import _latest_numeric, _safe_float
 class FundamentalsDataError(Exception):
     """Custom exception for fundamentals data retrieval errors."""
-    
-def _latest_numeric(data: Dict[Any, Any]) -> Optional[float]:
-    """
-    Get the most recent numeric value from a data dictionary.
-
-    Args:
-        data (Dict[Any, Any]):  The data dictionary.
-
-    Returns:
-        Optional[float]: The most recent numeric value or None if not found.
-    """
-    if not isinstance(data, dict) or not data:
-        return None
-    try:
-        latest_period = sorted(data.keys())[-1]
-        return _safe_float(data[latest_period])
-    except Exception:
-        return None
     
     
 @dataclass
@@ -83,22 +65,6 @@ class FundamentalsService:
             revenue_growth_5y=revenue_growth_5y,
         )
         
-def _safe_float(value: Any) -> Optional[float]:
-    """
-    Safely convert a value to float.
-
-    Args:
-        value (Any): The value to convert.
-
-    Returns:
-        Optional[float]: The float value or None if conversion fails.
-    """
-    try:
-        num = float(value)
-    except (TypeError, ValueError):
-        return None
-
-    return num if isfinite(num) else None
     
 def _percent_from_decimal(value: Any) -> Optional[float]:
     """
