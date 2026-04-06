@@ -5,3 +5,4 @@ yfinance
 asyncpraw
 dotenv
 httpx
+vaderSentiment
