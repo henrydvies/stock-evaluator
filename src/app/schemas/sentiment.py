@@ -18,11 +18,10 @@ class SentimentResponse(BaseModel):
 
     Primary path: Finnhub GET /company-news (headlines + summaries), then VADER
     compound scores aggregated in-process. Analyst counts come from Finnhub
-    GET /stock/recommendation (recommendation trends; see Finnhub docs). Finnhub
-    /news-sentiment is not used for the narrative score fields unless separately wired.
+    GET /stock/recommendation (recommendation trends; see Finnhub docs).
     """
 
-    ## VADER-on-company-news (plus reserved Finnhub /news-sentiment slots)
+    ## VADER-on-company-news
     narrative_news_score: Optional[float] = Field(
         None,
         description=(
@@ -44,33 +43,6 @@ class SentimentResponse(BaseModel):
             "Null when no articles were scored."
         ),
     )
-    narrative_buzz: Optional[float] = Field(
-        None,
-        description=(
-            "Reserved for Finnhub /news-sentiment buzz when that endpoint is integrated; "
-            "currently not populated."
-        ),
-    )
-    narrative_article_count_proxy: Optional[int] = Field(
-        None,
-        description=(
-            "Reserved for Finnhub /news-sentiment article-count proxy; "
-            "use narrative_headline_count for the company-news + VADER path."
-        ),
-    )
-    narrative_sector_news_score: Optional[float] = Field(
-        None,
-        description=(
-            "Reserved for Finnhub /news-sentiment sector benchmark; currently not populated."
-        ),
-    )
-    narrative_vs_sector_news_score: Optional[float] = Field(
-        None,
-        description=(
-            "Reserved for company vs sector gap from /news-sentiment; currently not populated."
-        ),
-    )
-
     narrative_confidence: float = Field(
         ...,
         description=(

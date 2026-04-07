@@ -21,12 +21,7 @@ technical.volatility_30    -    Standard deviation of the last 30 change in clos
 
 ## Sentiment
 
-### Reddit 
-sentiment.reddit_score_(7d, 30d) - Net score accross sentiment metrics
-sentiment.reddit_confidence(7d, 30d) - confidence in the score quality in 0, 1 range, based on sample size/ relevance.
-sentiment.reddit_mentions_(7d, 30d)
-sentiment.reddit_sources(7d, 30d) - total sources on the topic (i.e how many posts/ comments checked)
-sentiment.reddit_status(7d, 30d) - enum could be like ok, low-data, noisy, amiguous-ticker, stale?
+### Finnhub
 
 ## Scores
 scores.overall  -   Attempt at a overall combination score
