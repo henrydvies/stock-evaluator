@@ -8,7 +8,6 @@ from app.utils.ticker import InvalidTickerError
 from app.providers.yahoo_client import YahooClientError, YahooSymbolNotFoundError
 from app.providers.finnhub_client import FinnhubClientError
 from app.core.price_service import PriceDataError
-from app.core.fundamentals_service import FundamentalsDataError
 
 
 router = APIRouter(prefix="/eval", tags=["Evaluation"])
@@ -54,7 +53,7 @@ async def evaluate_stock(
                 "details": f"Symbol '{symbol}' does not exist."
             },
         )
-    except (YahooClientError, PriceDataError, FundamentalsDataError) as e:
+    except (YahooClientError, PriceDataError) as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail={

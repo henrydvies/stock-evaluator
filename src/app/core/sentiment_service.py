@@ -32,14 +32,12 @@ def parse_analyst_recommendation_trends(
     """
     empty: dict[str, Any] = {
         "analyst_recommendation_period": None,
-        "analyst_recommendation_strong_buy": None,
-        "analyst_recommendation_buy": None,
-        "analyst_recommendation_hold": None,
-        "analyst_recommendation_sell": None,
-        "analyst_recommendation_strong_sell": None,
+        "analyst_recommendation_counts": None,
         "analyst_recommendation_total": None,
         "analyst_recommendation_bullish_pct": None,
         "analyst_recommendation_bearish_pct": None,
+        "analyst_recommendation_neutral_pct": None,
+        "analyst_recommendation_net_score": None,
     }
     if not rows:
         return empty
@@ -59,17 +57,23 @@ def parse_analyst_recommendation_trends(
         return {**empty, "analyst_recommendation_period": period_str}
 
     bullish_n = int(sb or 0) + int(buy or 0)
+    neutral_n = int(hold or 0)
     bearish_n = int(sell or 0) + int(ss or 0)
+    weighted_sum = (2 * int(sb or 0)) + int(buy or 0) - int(sell or 0) - (2 * int(ss or 0))
     return {
         "analyst_recommendation_period": period_str,
-        "analyst_recommendation_strong_buy": sb,
-        "analyst_recommendation_buy": buy,
-        "analyst_recommendation_hold": hold,
-        "analyst_recommendation_sell": sell,
-        "analyst_recommendation_strong_sell": ss,
+        "analyst_recommendation_counts": {
+            "strong_buy": int(sb or 0),
+            "buy": int(buy or 0),
+            "hold": int(hold or 0),
+            "sell": int(sell or 0),
+            "strong_sell": int(ss or 0),
+        },
         "analyst_recommendation_total": total,
         "analyst_recommendation_bullish_pct": 100.0 * bullish_n / total,
         "analyst_recommendation_bearish_pct": 100.0 * bearish_n / total,
+        "analyst_recommendation_neutral_pct": 100.0 * neutral_n / total,
+        "analyst_recommendation_net_score": weighted_sum / (2.0 * total),
     }
 
 

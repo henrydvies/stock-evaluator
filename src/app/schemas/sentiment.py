@@ -12,16 +12,20 @@ class SentimentStatus(str, Enum):
     STALE = "stale"
     SOURCE_ERROR = "source_error"
 
+
+class AnalystRecommendationCounts(BaseModel):
+    strong_buy: int = Field(..., description="Count of strong buy ratings in the latest recommendation row.")
+    buy: int = Field(..., description="Count of buy ratings in the latest recommendation row.")
+    hold: int = Field(..., description="Count of hold ratings in the latest recommendation row.")
+    sell: int = Field(..., description="Count of sell ratings in the latest recommendation row.")
+    strong_sell: int = Field(..., description="Count of strong sell ratings in the latest recommendation row.")
+
+
 class SentimentResponse(BaseModel):
     """
     Market narrative sentiment.
-
-    Primary path: Finnhub GET /company-news (headlines + summaries), then VADER
-    compound scores aggregated in-process. Analyst counts come from Finnhub
-    GET /stock/recommendation (recommendation trends; see Finnhub docs).
     """
-
-    ## VADER-on-company-news
+    ## Finnhub + VADER sourced
     narrative_news_score: Optional[float] = Field(
         None,
         description=(
@@ -71,7 +75,6 @@ class SentimentResponse(BaseModel):
         ),
     )
 
-    # --- Company-news payload + VADER scoring window ---
     narrative_headline_count: Optional[int] = Field(
         None,
         description=(
@@ -88,30 +91,13 @@ class SentimentResponse(BaseModel):
         description="Sample headlines from scored articles (newest first); respect Finnhub ToS for display/redistribution.",
     )
 
-    # --- Finnhub GET /stock/recommendation (analyst trends; same sentiment payload) ---
     analyst_recommendation_period: Optional[str] = Field(
         None,
         description="Reporting period for the latest row from Finnhub recommendation trends (e.g. month-end date).",
     )
-    analyst_recommendation_strong_buy: Optional[int] = Field(
+    analyst_recommendation_counts: Optional[AnalystRecommendationCounts] = Field(
         None,
-        description="Count of strong buy ratings in the latest recommendation row.",
-    )
-    analyst_recommendation_buy: Optional[int] = Field(
-        None,
-        description="Count of buy ratings in the latest recommendation row.",
-    )
-    analyst_recommendation_hold: Optional[int] = Field(
-        None,
-        description="Count of hold ratings in the latest recommendation row.",
-    )
-    analyst_recommendation_sell: Optional[int] = Field(
-        None,
-        description="Count of sell ratings in the latest recommendation row.",
-    )
-    analyst_recommendation_strong_sell: Optional[int] = Field(
-        None,
-        description="Count of strong sell ratings in the latest recommendation row.",
+        description="Grouped analyst recommendation counts from the latest Finnhub recommendation row.",
     )
     analyst_recommendation_total: Optional[int] = Field(
         None,
@@ -124,4 +110,15 @@ class SentimentResponse(BaseModel):
     analyst_recommendation_bearish_pct: Optional[float] = Field(
         None,
         description="Share of analysts bearish (sell + strong sell) as 0–100; null if total is zero.",
+    )
+    analyst_recommendation_neutral_pct: Optional[float] = Field(
+        None,
+        description="Share of analysts neutral (hold) as 0–100; null if total is zero.",
+    )
+    analyst_recommendation_net_score: Optional[float] = Field(
+        None,
+        description=(
+            "Weighted analyst recommendation score normalized to [-1, 1], where "
+            "strong_buy=+2, buy=+1, hold=0, sell=-1, strong_sell=-2."
+        ),
     )

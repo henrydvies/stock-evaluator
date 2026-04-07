@@ -14,6 +14,7 @@ class StockSentimentMetric(BaseMetric):
 
     async def compute(self, ticker: str) -> Dict[str, Any]:
         res = await self.service.get_sentiment_for_symbol(ticker)
+        counts = res.analyst_recommendation_counts
         return {
             "sentiment.narrative_news_score": res.narrative_news_score,
             "sentiment.narrative_bullish_pct": res.narrative_bullish_pct,
@@ -26,12 +27,10 @@ class StockSentimentMetric(BaseMetric):
             "sentiment.narrative_headline_distinct_sources": res.narrative_headline_distinct_sources,
             "sentiment.narrative_headline_sample_titles": res.narrative_headline_sample_titles,
             "sentiment.analyst_recommendation_period": res.analyst_recommendation_period,
-            "sentiment.analyst_recommendation_strong_buy": res.analyst_recommendation_strong_buy,
-            "sentiment.analyst_recommendation_buy": res.analyst_recommendation_buy,
-            "sentiment.analyst_recommendation_hold": res.analyst_recommendation_hold,
-            "sentiment.analyst_recommendation_sell": res.analyst_recommendation_sell,
-            "sentiment.analyst_recommendation_strong_sell": res.analyst_recommendation_strong_sell,
+            "sentiment.analyst_recommendation_counts": counts.model_dump() if counts else None,
             "sentiment.analyst_recommendation_total": res.analyst_recommendation_total,
             "sentiment.analyst_recommendation_bullish_pct": res.analyst_recommendation_bullish_pct,
             "sentiment.analyst_recommendation_bearish_pct": res.analyst_recommendation_bearish_pct,
+            "sentiment.analyst_recommendation_neutral_pct": res.analyst_recommendation_neutral_pct,
+            "sentiment.analyst_recommendation_net_score": res.analyst_recommendation_net_score,
         }
