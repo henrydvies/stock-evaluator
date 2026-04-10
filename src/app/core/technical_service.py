@@ -1,17 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from math import isfinite
-
 from app.providers.yahoo_client import YahooClient, YahooSymbolNotFoundError, YahooClientError
 from app.schemas.technical import TechnicalResponse
 from app.utils.ticker import normalise_and_validate_ticker
 from app.core.utils.service_helpers import _safe_float
 
-class TechnicalDataError(Exception):
-    """Exception for error in fetching technical data.
-    """
-    
 @dataclass
 class TechnicalService:
     """

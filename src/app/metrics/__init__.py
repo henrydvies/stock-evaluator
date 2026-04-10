@@ -4,13 +4,14 @@ from .base import BaseMetric
 from .price import StockPriceMetric
 from .fundamentals import StockFundamentalsMetric
 from .technical import StockTechnicalMetric
+from .sentiment import StockSentimentMetric
 
 # List of all available metrics
 _METRICS: List[BaseMetric] = [
     StockPriceMetric(),
     StockFundamentalsMetric(),
     StockTechnicalMetric(),
-    
+    StockSentimentMetric(),
 ]
 
 async def evaluate_all(ticker: str) -> Dict[str, Any]:

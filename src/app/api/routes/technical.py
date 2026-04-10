@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 
 from app.metrics.technical import get_technical_service
-from app.core.technical_service import TechnicalService, TechnicalDataError
+from app.core.technical_service import TechnicalService
 from app.schemas.technical import TechnicalResponse
 from app.schemas.ticker import ErrorResponse
 from app.utils.ticker import InvalidTickerError
-from app.providers.yahoo_client import YFinanceYahooClient, YahooClientError, YahooSymbolNotFoundError
+from app.providers.yahoo_client import YahooClientError, YahooSymbolNotFoundError
 
 router = APIRouter(prefix="/technical", tags=["Technical"])
 
@@ -50,21 +50,12 @@ async def get_technical(
                 "details": f"Symbol '{symbol}' does not exist."
             },
         )
-    except (YahooClientError, TechnicalDataError) as e:
+    except YahooClientError as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail={
                 "error": "YAHOO_CLIENT_ERROR",
                 "message": str(e),
                 "details": "Error occurred while communicating with Yahoo Finance."
-            },
-        )
-    except TechnicalDataError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={
-                "error": "TECHNICAL_DATA_ERROR",
-                "message": str(e),
-                "details": "Error occurred while retrieving technical data."
             },
         )
