@@ -2,3 +2,7 @@ fastapi
 pydantic
 uvicorn
 yfinance
+asyncpraw
+dotenv
+httpx
+vaderSentiment

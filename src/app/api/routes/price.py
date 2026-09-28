@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.price_service import PriceService, PriceDataError
-from app.providers.yahoo_client import YFinanceYahooClient, YahooClientError, YahooSymbolNotFoundError
+from app.providers.yahoo_client import YahooClientError, YahooSymbolNotFoundError
 from app.utils.ticker import InvalidTickerError
 from app.schemas.ticker import ErrorResponse
 from app.schemas.price import PriceResponse

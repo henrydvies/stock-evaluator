@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.metrics.fundamentals import get_fundamentals_service
-from app.core.fundamentals_service import FundamentalsService, FundamentalsDataError
+from app.core.fundamentals_service import FundamentalsService
 from app.schemas.fundamentals import FundamentalsResponse
 from app.schemas.ticker import ErrorResponse
 from app.utils.ticker import InvalidTickerError
-from app.providers.yahoo_client import YFinanceYahooClient, YahooClientError, YahooSymbolNotFoundError
+from app.providers.yahoo_client import YahooClientError, YahooSymbolNotFoundError
 
 router = APIRouter(prefix="/fundamentals", tags=["Fundamentals"])
 
@@ -49,22 +49,13 @@ async def get_fundamentals(
                 "details": f"Symbol '{symbol}' does not exist."
             },
         )
-    except (YahooClientError, FundamentalsDataError) as e:
+    except YahooClientError as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail={
                 "error": "YAHOO_CLIENT_ERROR",
                 "message": str(e),
                 "details": "Error occurred while communicating with Yahoo Finance."
-            },
-        )
-    except FundamentalsDataError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={
-                "error": "FUNDAMENTALS_DATA_ERROR",
-                "message": str(e),
-                "details": "Error occurred while retrieving fundamentals data."
             },
         )
     

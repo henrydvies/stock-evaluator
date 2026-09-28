@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 
-
-from app.api.routes import tickers, price, fundamentals, technical, eval
+# Load .env before routes/metrics import (metrics construct Finnhub client at import time).
 from app.core.config import settings
-
+from app.api.routes import tickers, price, fundamentals, technical, eval, sentiment
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -20,8 +19,8 @@ def create_app() -> FastAPI:
     app.include_router(price.router)
     app.include_router(fundamentals.router)
     app.include_router(technical.router)
-    app.include_router(eval.router)
-    
+    app.include_router(sentiment.router)
+
     # Evaluate all
     app.include_router(eval.router)
     
